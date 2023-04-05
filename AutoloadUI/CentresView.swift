@@ -11,71 +11,55 @@ struct CentresView: View {
     
     //  Autoloader
     @StateObject fileprivate var viewModel = DatabaseViewModel()
-    @Environment(\.presentationMode) var presentationMode
+    
+    @State private var path = NavigationPath()
     
     //  Message
     @State var message:String = ""
     
     var body: some View {
         
-        NavigationStack {
+        NavigationStack(path: $path) {
             
             List(viewModel.records) { record in
-            
-                NavigationLink {
-                
-                    ZStack {
-                    
-                        VStack(alignment: .leading) {
-                            
-                            Text(record.fields[1].value)
-                            Text(record.fields[2].value)
-                            Text(record.fields[3].value)
-                            Text(record.fields[4].value)
-                            
-                            Button("DELETE"){
-                                
-                                /*
-                                viewModel.loader.delete(key: "id", condition: record.fields[0].value){ success,message in
-                                    
-                                    if(success){
-                                        presentation.wrappedValue.dismiss()
-                                        refresh()
-                                    }
-                                    else{
-                                        self.message = message
-                                    }
-                                }*/
-                            }
-                        }
-                        
-                        if(message != ""){
-                            Button(message){
-                                message = ""
-                            }
-                            .buttonStyle(.borderedProminent)
-                        }
-                    }
-                    
-                } label: {
-                    Text(record.fields[1].value)
-                }
+                NavigationLink(record.fields[1].value, value: record)
             }
             .listStyle(.plain)
             .navigationTitle("Centres")
+            .navigationDestination(for: Record.self) { record in
+                
+                VStack {
+                    Text(record.fields[1].value).padding()
+                    Button("DELETE") {
+                        
+                        viewModel.delete(key: "id", condition: /*record.fields[0].value*/"999"){ success,message in
+                            
+                            self.message = message
+                            
+                            if(success){
+                                path.removeLast(1)
+                                refresh()
+                            }
+                        }
+                        
+                    }.padding()
+                    
+                    if(message != ""){
+                        Button(message){
+                            message = ""
+                            path.removeLast(1)
+                        }
+                        .buttonStyle(.borderedProminent)
+                    }
+                }
+            }
         }
         .onAppear {
-            
-            //  Relay params
-            viewModel.loader.domain = "http://192.168.1.3:8000"
-            viewModel.loader.database = "babbleton"
-            viewModel.loader.table = "centres"
-            
             refresh()
         }
     }
     
     func refresh(){
-        viewModel.loader.select(columns: "id::text,name,coalesce(address1,'(null)'),coalesce(address2,''),coalesce(address3,''),coalesce(address4,'')")
+        viewModel.select(columns: "id::text,name,coalesce(address1,'(null)'),coalesce(address2,''),coalesce(address3,''),coalesce(address4,'')")
     }
 }

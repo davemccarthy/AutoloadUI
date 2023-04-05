@@ -112,7 +112,7 @@ struct OperatorView: View {
             }
         }
         .onAppear {
-            viewModel.loader.select(columns: columns, filter: filter, orderby: "o.id desc")
+            viewModel.loader.select(columns: columns, filter: filter, orderby: "o.id desc"){ data in }
         }
     }
 }
@@ -138,7 +138,7 @@ struct OperatorsView: View {
             .navigationTitle("Operators")
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
-                viewModel.loader.select(columns:columns, orderby: "o.id desc")
+                viewModel.loader.select(columns:columns, orderby: "o.id desc"){ data in }
             }
         }
     }

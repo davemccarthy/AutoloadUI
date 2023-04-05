@@ -7,6 +7,41 @@
 
 import SwiftUI
 
+struct DemoPop: View {
+
+    @State private var path = NavigationPath()
+    
+    var body: some View {
+        
+        VStack {
+            
+            NavigationStack(path: $path) {
+                   
+                List {
+                    Section("List One") {
+                        NavigationLink("Navigate to View 1", value: "View 1")
+                        NavigationLink("Navigate to View 2", value: "View 2")
+                    }
+                }
+                .navigationDestination(for: String.self) { textDesc in
+                    
+                    VStack {
+                        Text(textDesc).padding()
+                        Button("Navigate to View 3") {
+                            path.append("View 3")
+                        }.padding()
+                        
+                        Button("Pop to Root View") {
+                            path.removeLast(path.count)
+                        }.padding()
+                    }
+                }
+                .navigationTitle("Test Pop To Root")
+            }
+        }
+    }
+}
+
 struct TestView: View {
     
     var body: some View {

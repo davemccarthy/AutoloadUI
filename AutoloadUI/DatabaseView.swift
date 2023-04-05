@@ -7,6 +7,25 @@
 
 import SwiftUI
 
+//  Format from server
+public struct TableData: Decodable {
+    
+    let id: String
+    let count:Int
+    let limit: Int
+    let offset: Int
+    let message: String
+    let columns: [String]
+    let rows:[[String]]
+}
+
+//  Format from server
+public struct TrashData: Decodable {
+    
+    let id: String
+    let message: String
+}
+
 //  Generic string field
 struct Field: Identifiable {
     
@@ -31,7 +50,7 @@ struct Column: Identifiable {
 }
 
 //  Generic record
-struct Record: Identifiable {
+struct Record: Identifiable,  Hashable {
     
     var id = UUID()
     var fields:[Field] = []
@@ -44,10 +63,28 @@ struct Record: Identifiable {
         
         self.fields[0].font = .headline
     }
+    
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+    
+    static func ==(lhs: Record, rhs: Record) -> Bool {
+         return lhs.id == rhs.id
+    }
 }
 
 //  Database model
-class DatabaseViewModel: ObservableObject, Autoloadable {
+class DatabaseViewModel: ObservableObject {
+    
+    var session:URLSession = URLSession.shared
+    
+    //  Params
+    var id = ""
+    var domain = ""
+    var database = ""
+    var table = ""
+    var join = ""
+    var pagesize:Int = 1000
     
     //  Selected results
     @Published var columns:[Column] = []
@@ -56,38 +93,99 @@ class DatabaseViewModel: ObservableObject, Autoloadable {
     //  Generic message
     @Published var message:String = ""
     
-    var loader = Autoload()
-    
     //  Initialize
     init() {
-        loader.delegate = self;
+        domain = "http://192.168.1.3:8000"
+        database = "babbleton"
+        table = "centres"
     }
     
-    //  Query results
-    func selected(data:TableData) {
+    //  Select database rows
+    func select(columns:String, offset:Int = 0, filter:String = "", groupby:String="", orderby:String = "",completion:@escaping (Bool,String)->()={b,s in}){
         
-        columns.removeAll()
-        records.removeAll()
+        let params:[String : Any] = [
+            "database" : "\(database)",
+            "table" : "\(table)",
+            "columns" : "\(columns)",
+            "join" : "\(join)",
+            "filter" : "\(filter)",
+            "groupby" : "\(groupby)",
+            "orderby" : "\(orderby)",
+            "limit" : "\(self.pagesize)",
+            "offset" : "\(offset)"
+        ]
         
-        //  Error message?
-        if(data.message != ""){
-            records.append(Record(values: [data.message]))
-        }
-        
-        //  Build rows
-        for col in data.columns {
-            columns.append(Column(name: col))
-        }
-        
-        //  Build records from query resulting rows
-        for row in data.rows {
-            records.append(Record(values: row))
+        //  Post query and populate response
+        query(method: "tablemaker", params: params) { code, jsonData in
+
+            let tableData: TableData = try! JSONDecoder().decode(TableData.self, from: jsonData)
+            
+            self.columns.removeAll()
+            self.records.removeAll()
+            
+            //  Error message?
+            if(tableData.message != ""){
+                self.records.append(Record(values: [tableData.message]))
+            }
+            
+            //  Build rows
+            for col in tableData.columns {
+                self.columns.append(Column(name: col))
+            }
+            
+            //  Build records from query resulting rows
+            for row in tableData.rows {
+                self.records.append(Record(values: row))
+            }
         }
     }
     
-    //  Deleted callback
-    func deleted(data:TrashData){
-        message = data.message
+    //  Delete row
+    func delete(key:String, condition:String, completion:@escaping (Bool,String) -> ()){
+        
+        let params:[String : Any] = [
+            "database" : "\(database)",
+            "table" : "\(table)",
+            "key" : "\(key)",
+            "condition" : "\(condition)"
+        ]
+        
+        query(method: "tabledeleter", params: params) { code, jsonData in
+            
+            let trashData: TrashData = try! JSONDecoder().decode(TrashData.self, from: jsonData)
+            
+            completion(code == 200 ? true : false, trashData.message)
+        }
+    }
+    
+    //  Generic database proxy query
+    func query(method:String,params:[String : Any],completion:@escaping (Int,Data) -> ()){
+        
+        let jsonData = try! JSONSerialization.data(withJSONObject: params, options: [])
+        let jsonString = NSString(data: jsonData, encoding: String.Encoding.utf8.rawValue)! as String
+        
+        var request = URLRequest(url: URL(string: "\(domain)/\(method)/ios/")!)
+        
+        request.httpBody = ("Params=\(jsonString)").data(using: .utf8)
+        request.httpMethod = "POST"
+        
+        let task = session.dataTask(with: request as URLRequest, completionHandler: { (data, response, error) in
+        
+            guard let jsonData:Data = data else {
+                
+                if let error = error { print("HTTP Request Failed \(error)")}
+                return;
+            }
+        
+            DispatchQueue.main.async {
+            
+                let httpResponse = response as! HTTPURLResponse
+            
+                completion(httpResponse.statusCode,jsonData)
+            }
+        })
+            
+        task.resume()
     }
 }
 
@@ -130,13 +228,13 @@ struct DatabaseView<Content: View>: View {
         .onAppear {
             
             //  Relay params
-            viewModel.loader.domain = domain
-            viewModel.loader.database = database
-            viewModel.loader.table = table
-            viewModel.loader.join = join
+            viewModel.domain = domain
+            viewModel.database = database
+            viewModel.table = table
+            viewModel.join = join
             
             //  Select and force update
-            viewModel.loader.select(columns: columns, groupby: groupby)
+            viewModel.select(columns: columns, groupby: groupby)
             viewModel.objectWillChange.send()
         }
     }
