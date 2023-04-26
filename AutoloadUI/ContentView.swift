@@ -42,24 +42,58 @@ struct DemoPop: View {
     }
 }
 
-struct TestView: View {
+struct ContentView2: View {
     
     var body: some View {
         
-        DatabaseView(
-            domain: "http://192.168.1.3:8000", database: "babbleton", table: "centres", columns: "name"
-        ){ columns, records in
-           
-            List {
-                //  Iterate each field in each record
-                ForEach(records) { record in
-                    
-                    VStack(alignment: .leading) {
-                        ForEach(record.fields) { field in
-                            Text(field.value).font(field.font)
-                        }
-                    }
-                }
+        Form {
+            Group {
+                Text("Hello, world!")
+                Text("Hello, world!")
+                Text("Hello, world!")
+                Text("Hello, world!")
+                Text("Hello, world!")
+                Text("Hello, world!")
+            }
+
+            Group {
+                Text("Hello, world!")
+                Text("Hello, world!")
+                Text("Hello, world!")
+                Text("Hello, world!")
+                Text("Hello, world!")
+            }
+            Group {
+                Text("Hello, world!")
+                Text("Hello, world!")
+                Text("Hello, world!")
+                Text("Hello, world!")
+                Text("Hello, world!")
+                Text("Hello, world!")
+            }
+
+            Group {
+                Text("Hello, world!")
+                Text("Hello, world!")
+                Text("Hello, world!")
+                Text("Hello, world!")
+                Text("Hello, world!")
+            }
+            Group {
+                Text("Hello, world!")
+                Text("Hello, world!")
+                Text("Hello, world!")
+                Text("Hello, world!")
+                Text("Hello, world!")
+                Text("Hello, world!")
+            }
+
+            Group {
+                Text("Hello, world!")
+                Text("Hello, world!")
+                Text("Hello, world!")
+                Text("Hello, world!")
+                Text("Hello, world!")
             }
         }
     }
@@ -98,9 +132,14 @@ struct ContentView: View {
         domain: "http://192.168.1.3:8000", table: "auth_user", columns: "username,email"
     )
     
-    let test = TestView()
-    
     let centresView = CentresView()
+    
+    //let centresView = CentresView(domain: "http://192.168.1.3:8000", database: "babbleton", table: "centres", //columns:"id::text,name,coalesce(address1,'(null)'),coalesce(address2,''),coalesce(address3,''),coalesce(address4,'')")
+    
+    
+    //let centresView = TableExView(domain: "http://192.168.1.3:8000", database: "babbleton", table: "centres", columns:"id::text,name,abbreviation,contact,email",
+    //                              onDetail: {Text("1")},onEdit: {Text("2")})
+    
     
     //let SessionView = TableView(
     //    domain: "http://192.168.1.3:8000", database: "babbleton", table: "sessions s", columns: "o.fname||\' \'||o.sname,start,duration", join: "inner join operators o on s.operid=o.id"

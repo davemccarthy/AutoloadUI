@@ -41,7 +41,7 @@ struct TableView: View {
                     
                     VStack(alignment: .leading) {
                         ForEach(record.fields) { field in
-                            Text(field.value).font(field.font)
+                            Text(field.value)
                         }
                     }
                 }

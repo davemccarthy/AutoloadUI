@@ -31,7 +31,7 @@ struct Field: Identifiable {
     
     var id = UUID()
     var value:String
-    var font:Font = .subheadline
+    //var font:Font = .subheadline
     
     init(value:String) {
         self.value = value
@@ -50,7 +50,7 @@ struct Column: Identifiable {
 }
 
 //  Generic record
-struct Record: Identifiable,  Hashable {
+struct Record: Identifiable {
     
     var id = UUID()
     var fields:[Field] = []
@@ -60,21 +60,11 @@ struct Record: Identifiable,  Hashable {
         for value in values {
             self.fields.append(Field(value:value))
         }
-        
-        self.fields[0].font = .headline
-    }
-    
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(id)
-    }
-    
-    static func ==(lhs: Record, rhs: Record) -> Bool {
-         return lhs.id == rhs.id
     }
 }
 
 //  Database model
-class DatabaseViewModel: ObservableObject {
+class DatabaseModel: ObservableObject {
     
     var session:URLSession = URLSession.shared
     
@@ -92,13 +82,6 @@ class DatabaseViewModel: ObservableObject {
     
     //  Generic message
     @Published var message:String = ""
-    
-    //  Initialize
-    init() {
-        domain = "http://192.168.1.3:8000"
-        database = "babbleton"
-        table = "centres"
-    }
     
     //  Select database rows
     func select(columns:String, offset:Int = 0, filter:String = "", groupby:String="", orderby:String = "",completion:@escaping (Bool,String)->()={b,s in}){
@@ -140,8 +123,48 @@ class DatabaseViewModel: ObservableObject {
         }
     }
     
+    //  Create database row
+    func insert(columns:String, values:String, completion:@escaping (Bool,String)->()={b,s in}){
+        
+        let params:[String : Any] = [
+            "database" : "\(database)",
+            "table" : "\(table)",
+            "columns" : "\(columns)",
+            "values" : "\(values)"
+        ]
+        
+        query(method: "tablecreator", params: params) { code, jsonData in
+            
+            let trashData: TrashData = try! JSONDecoder().decode(TrashData.self, from: jsonData)
+            
+            print(trashData.message)
+            
+            completion(code == 200 ? true : false, trashData.message)
+        }
+    }
+    
+    //  Update database row
+    func update(columns:String, values:String, key:String, condition:String,completion:@escaping (Bool,String)->()={b,s in}){
+        
+        let params:[String : Any] = [
+            "database" : "\(database)",
+            "table" : "\(table)",
+            "columns" : "\(columns)",
+            "values" : "\(values)",
+            "key" : "\(key)",
+            "condition" : "\(condition)"
+        ]
+        
+        query(method: "tableupdater", params: params) { code, jsonData in
+            
+            let trashData: TrashData = try! JSONDecoder().decode(TrashData.self, from: jsonData)
+            
+            completion(code == 200 ? true : false, trashData.message)
+        }
+    }
+    
     //  Delete row
-    func delete(key:String, condition:String, completion:@escaping (Bool,String) -> ()){
+    func delete(key:String, condition:String, completion:@escaping (Bool,String) -> ()={b,s in}){
         
         let params:[String : Any] = [
             "database" : "\(database)",
@@ -192,7 +215,7 @@ class DatabaseViewModel: ObservableObject {
 //  Database view
 struct DatabaseView<Content: View>: View {
     
-    @StateObject fileprivate var viewModel = DatabaseViewModel()
+    @StateObject fileprivate var viewModel = DatabaseModel()
     
     @State var table:String
     @State var title:String
