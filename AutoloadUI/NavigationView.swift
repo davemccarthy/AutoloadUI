@@ -100,7 +100,6 @@ struct AppButton: View {
     }
 }
 
-
 struct CentresView: View {
     
     @State var message:String = ""
@@ -122,7 +121,7 @@ struct CentresView: View {
         
         VStack{
             if(message == ""){
-                NavigationView(domain: "http://192.168.1.3:8000", database: "babbleton", table: "centres", columns:"id::text,name,abbreviation,contact,email,coalesce(mobile,''),coalesce(address1,''),coalesce(address2,''),coalesce(address3,''),coalesce(address4,'')", orderby: "id",
+                NavigationView(domain: "http://192.168.1.6:8000", database: "babbleton", table: "centres", columns:"id::text,name,abbreviation,contact,email,coalesce(mobile,''),coalesce(address1,''),coalesce(address2,''),coalesce(address3,''),coalesce(address4,'')", orderby: "id",
                     onNew: { tableEx in
                     
                         Form{
@@ -182,17 +181,51 @@ struct CentresView: View {
                         }.navigationTitle("New Centre")
                     },
                     onDetail: {tableEx, record in
-                    
-                        VStack{
-                            AppView(name: "Name", value: record.fields[1].value)
-                            AppView(name: "Abbreviation", value: record.fields[2].value)
-                            AppView(name: "Contact", value: record.fields[3].value)
-                            AppView(name: "Email", value: record.fields[4].value)
                         
+                        Form{
+                        
+                            Section {
+
+                                TextField("Name", text: $name)
+                                TextField("Abbreviation", text: $abbreviation)
+                                TextField("Contact", text: $contact)
+                            
+                            } header: {
+                                Text("Identity")
+                            }
+                            
+                            Section {
+
+                                TextField("Email", text: $email)
+                                TextField("Mobile", text: $mobile)
+                            
+                            } header: {
+                                Text("Contact Info")
+                            }
+                            Section {
+
+                                TextField("Address1", text: $address1)
+                                TextField("Address2", text: $address2)
+                                TextField("Address3", text: $address3)
+                                TextField("Address4", text: $address4)
+                            
+                            } header: {
+                                Text("Address")
+                            }
                         }
-                        .padding()
-                        .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity, alignment: .topLeading)
-                        .navigationTitle(record.fields[1].value)
+                        .onAppear(){
+                            name = record.fields[1].value
+                            abbreviation = record.fields[2].value
+                            contact = record.fields[3].value
+                            email = record.fields[4].value
+                            mobile = record.fields[5].value
+                            address1 = record.fields[6].value
+                            address2 = record.fields[7].value
+                            address3 = record.fields[8].value
+                            address4 = record.fields[9].value
+                        }
+                        .disabled(true)
+                        .navigationTitle(name)
                     },
                     onEdit: {tableEx, record in
                     
@@ -222,7 +255,7 @@ struct CentresView: View {
                                 TextField("Address4", text: $address4)
                             
                             } header: {
-                            Text("Address")
+                                Text("Address")
                             }
                         
                             Section {
